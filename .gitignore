@@ -20,3 +20,7 @@ Makefile
 
 # vcpkg installed packages
 vcpkg_installed/
+
+# Don't ignore alternative configuration files
+!CMakeLists.robust.txt
+!.vscode/settings.no-vcpkg.json

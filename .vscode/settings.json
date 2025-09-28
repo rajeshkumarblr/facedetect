@@ -5,5 +5,8 @@
     "cmake.buildDirectory": "${workspaceFolder}/build",
     "cmake.configureEnvironment": {
         "VCPKG_ROOT": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/vcpkg"
-    }
+    },
+    "cmake.options.statusBarVisibility": "visible",
+    "cmake.showOptionsMovedNotification": false,
+    "cmake.generator": "Visual Studio 17 2022"
 }

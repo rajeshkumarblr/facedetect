@@ -1,0 +1,9 @@
+{
+    "cmake.configureArgs": [
+        "-DCMAKE_TOOLCHAIN_FILE=${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+    ],
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.configureEnvironment": {
+        "VCPKG_ROOT": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/vcpkg"
+    }
+}

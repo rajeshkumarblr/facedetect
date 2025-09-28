@@ -4,15 +4,21 @@ A real-time face detection application using OpenCV and CMake.
 
 ## Features
 - Real-time face detection from webcam
+- **🎙️ Voice Commands** - Control the app with your voice using OpenAI Whisper
 - Uses Haar Cascade classifier
 - Built with OpenCV 4.x and CMake
 - Cross-platform support
+- FPS display toggle
+- Detection enable/disable
+- Voice-activated screenshot capture
 
 ## Prerequisites
 - **CMake 3.10+**
 - **vcpkg** (Visual Studio 2022 built-in version recommended)
 - **Visual Studio 2022** or compatible C++ compiler
 - **Webcam** for real-time detection
+- **Microphone** for voice commands (optional)
+- **OpenAI API Key** for voice commands (optional)
 
 ## Installation Instructions
 
@@ -65,21 +71,65 @@ cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="/path/to/your/vcpkg/scripts/buildsys
 cmake --build build
 ```
 
-### 4. Download Haar Cascade File
+### 4. Setup OpenAI API Key (Optional - For Voice Commands)
+To enable voice commands, you need an OpenAI API key:
+
+1. **Get API Key:**
+   - Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
+   - Create an account and generate an API key
+
+2. **Set Environment Variable:**
+   ```powershell
+   # Windows (PowerShell)
+   $env:OPENAI_API_KEY="your-api-key-here"
+   
+   # Windows (Command Prompt)
+   set OPENAI_API_KEY=your-api-key-here
+   
+   # Linux/macOS
+   export OPENAI_API_KEY="your-api-key-here"
+   ```
+
+3. **For Permanent Setup (Windows):**
+   - Press `Win + R`, type `sysdm.cpl`
+   - Click "Environment Variables"
+   - Add `OPENAI_API_KEY` with your API key value
+
+### 5. Download Haar Cascade File
 Download the face detection model from OpenCV:
 1. Go to [OpenCV Haar Cascades](https://github.com/opencv/opencv/blob/master/data/haarcascades/haarcascade_frontalface_default.xml)
 2. Save as: `C:/Users/YOUR_USERNAME/source/repos/opencv/data/haarcascades/haarcascade_frontalface_default.xml`
 3. Or update the path in `facedetect.cpp` to point to your downloaded file
 
-### 5. Run the Application
+### 6. Run the Application
 ```powershell
 .\build\Debug\facedetect.exe
 ```
 
 ## Usage
+
+### Basic Controls
 - The application will open your default webcam
 - Detected faces are highlighted with cyan rectangles
 - Press **ESC** to quit the application
+
+### Keyboard Shortcuts
+- **D** - Toggle face detection on/off
+- **F** - Toggle FPS display
+- **S** - Take screenshot (placeholder)
+
+### 🎙️ Voice Commands (if enabled)
+The app listens for these voice commands:
+
+| Command | Action |
+|---------|--------|
+| "start detection" / "stop detection" | Toggle face detection |
+| "toggle detection" | Toggle face detection |
+| "show fps" / "hide fps" | Toggle FPS display |
+| "screenshot" / "capture" | Take screenshot |
+| "exit" / "quit" / "close" | Exit application |
+
+**Note:** Voice commands require an OpenAI API key and microphone access.
 
 ## VS Code Integration
 The project includes VS Code configuration files:
@@ -121,10 +171,31 @@ Download the file manually:
    face_cascade.load("haarcascade_frontalface_default.xml");  // relative path
    ```
 
+### ❌ Voice commands not working
+- **Check API key:** Make sure `OPENAI_API_KEY` environment variable is set
+- **Check microphone:** Ensure your microphone is working and not used by other apps
+- **Check internet:** Voice commands require internet connection for OpenAI API
+- **Speak clearly:** Wait for "Listening for command..." message, then speak clearly
+- **Check console:** Look for error messages in the console output
+
+### ❌ "No default input device found"
+- Make sure you have a working microphone connected
+- Check Windows sound settings to ensure microphone is enabled
+- Try running the application as administrator
+
+## Dependencies
+The project automatically installs these dependencies via vcpkg:
+- **OpenCV 4.x** - Computer vision and face detection
+- **CURL** - HTTP requests to OpenAI API
+- **nlohmann-json** - JSON parsing for API responses  
+- **PortAudio** - Audio recording for voice commands
+
 ## Project Structure
 ```
 facedetect/
 ├── facedetect.cpp          # Main application code
+├── voice_command.h         # Voice command header
+├── voice_command.cpp       # Voice command implementation
 ├── CMakeLists.txt          # CMake configuration
 ├── vcpkg.json             # vcpkg dependencies
 ├── .gitignore             # Git ignore rules

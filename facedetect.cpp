@@ -1,148 +1,120 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/objdetect.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <iostream>
-#include <cstdlib>
-#include "voice_command.h"
-
-using namespace cv;
-
-// Global variables for voice control
-bool face_detection_enabled = true;
-bool show_fps = false;
-bool voice_commands_enabled = false;
-std::string openai_api_key;
-
-void toggleFaceDetection() {
-    face_detection_enabled = !face_detection_enabled;
-    std::cout << "Face detection " << (face_detection_enabled ? "enabled" : "disabled") << std::endl;
-}
-
-void toggleFPS() {
-    show_fps = !show_fps;
-    std::cout << "FPS display " << (show_fps ? "enabled" : "disabled") << std::endl;
-}
-
-void exitApplication() {
-    std::cout << "Exiting application..." << std::endl;
-    exit(0);
-}
-
-void takeScreenshot() {
-    std::cout << "Screenshot command received!" << std::endl;
-    // Screenshot functionality can be implemented here
-}
+#include <vector>
+#include <chrono>
+#include <ctime>
 
 int main() {
-    // Get OpenAI API key from environment variable
-    const char* api_key_env = std::getenv("OPENAI_API_KEY");
-    if (api_key_env) {
-        openai_api_key = api_key_env;
-        voice_commands_enabled = true;
-    } else {
-        std::cout << "OpenAI API key not found. Voice commands disabled." << std::endl;
-        std::cout << "Set OPENAI_API_KEY environment variable to enable voice commands." << std::endl;
-    }
+    std::cout << "🎯 SIMPLE FACE DETECTION" << std::endl;
+    std::cout << "========================" << std::endl;
+    std::cout << "📹 Starting camera..." << std::endl;
 
-    // Initialize voice commands
-    VoiceCommandProcessor voice_processor;
-    if (voice_commands_enabled && voice_processor.initialize(openai_api_key)) {
-        // Register voice commands
-        voice_processor.registerCommand("start detection", toggleFaceDetection);
-        voice_processor.registerCommand("stop detection", toggleFaceDetection);
-        voice_processor.registerCommand("toggle detection", toggleFaceDetection);
-        voice_processor.registerCommand("show fps", toggleFPS);
-        voice_processor.registerCommand("hide fps", toggleFPS);
-        voice_processor.registerCommand("exit", exitApplication);
-        voice_processor.registerCommand("quit", exitApplication);
-        voice_processor.registerCommand("close", exitApplication);
-        voice_processor.registerCommand("screenshot", takeScreenshot);
-        voice_processor.registerCommand("capture", takeScreenshot);
-        
-        voice_processor.startListening();
-        std::cout << "Voice commands enabled! Try saying:" << std::endl;
-        std::cout << "  - 'start detection' / 'stop detection'" << std::endl;
-        std::cout << "  - 'show fps' / 'hide fps'" << std::endl;
-        std::cout << "  - 'screenshot' / 'capture'" << std::endl;
-        std::cout << "  - 'exit' / 'quit'" << std::endl;
-    }
-
-    // Load face cascade
-    CascadeClassifier face_cascade;
-    face_cascade.load("C:/Users/rajes/source/repos/opencv/data/haarcascades/haarcascade_frontalface_default.xml");
-
-    VideoCapture cap(0); // Open webcam
-    if (!cap.isOpened()) {
-        std::cerr << "Error: Cannot open webcam" << std::endl;
+    // Load the face cascade
+    cv::CascadeClassifier face_cascade;
+    if (!face_cascade.load("haarcascade_frontalface_alt.xml")) {
+        std::cerr << "❌ Error loading face cascade" << std::endl;
         return -1;
     }
 
-    Mat frame, gray;
-    auto start_time = std::chrono::high_resolution_clock::now();
-    int frame_count = 0;
-    
-    std::cout << "Face detection started. Press ESC to quit." << std::endl;
+    // Open the default camera
+    cv::VideoCapture cap(0);
+    if (!cap.isOpened()) {
+        std::cerr << "❌ Cannot open camera" << std::endl;
+        return -1;
+    }
 
+    std::cout << "✅ Camera opened successfully!" << std::endl;
+    std::cout << "🎮 Controls:" << std::endl;
+    std::cout << "   ESC or Q - Quit" << std::endl;
+    std::cout << "   D - Toggle face detection" << std::endl;
+    std::cout << "   F - Toggle FPS display" << std::endl;
+    std::cout << "   S - Save screenshot" << std::endl << std::endl;
+
+    bool face_detection_enabled = true;
+    bool show_fps = false;
+    int frame_count = 0;
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    cv::Mat frame;
     while (true) {
         cap >> frame;
-        if (frame.empty()) break;
+        if (frame.empty()) {
+            std::cerr << "❌ Failed to capture frame" << std::endl;
+            break;
+        }
 
         // Convert to grayscale for face detection
-        cvtColor(frame, gray, COLOR_BGR2GRAY);
+        cv::Mat gray;
+        cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+        cv::equalizeHist(gray, gray);
 
-        // Perform face detection only if enabled
+        // Detect faces if enabled
+        std::vector<cv::Rect> faces;
         if (face_detection_enabled) {
-            std::vector<Rect> faces;
-            face_cascade.detectMultiScale(gray, faces, 1.1, 3, 0, Size(30, 30));
+            face_cascade.detectMultiScale(gray, faces, 1.1, 3, 0, cv::Size(30, 30));
 
             // Draw rectangles around detected faces
             for (const auto& face : faces) {
-                rectangle(frame, face, Scalar(0, 255, 255), 2); // Cyan rectangles
+                cv::Point center(face.x + face.width / 2, face.y + face.height / 2);
+                cv::ellipse(frame, center, cv::Size(face.width / 2, face.height / 2), 
+                           0, 0, 360, cv::Scalar(255, 0, 255), 4);
             }
 
             // Display face count
-            putText(frame, "Faces: " + std::to_string(faces.size()), 
-                   Point(10, 30), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 0), 2);
+            std::string face_text = "Faces: " + std::to_string(faces.size());
+            cv::putText(frame, face_text, cv::Point(10, 30), 
+                       cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
         } else {
-            // Show "Detection Disabled" message
-            putText(frame, "Detection Disabled", Point(10, 30), 
-                   FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 255), 2);
+            cv::putText(frame, "Face detection OFF", cv::Point(10, 30), 
+                       cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 255), 2);
         }
 
         // Calculate and display FPS if enabled
         if (show_fps) {
             frame_count++;
-            auto current_time = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::seconds>(
-                current_time - start_time).count();
-            
-            if (duration > 0) {
-                double fps = frame_count / static_cast<double>(duration);
-                putText(frame, "FPS: " + std::to_string(static_cast<int>(fps)), 
-                       Point(10, 60), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(255, 0, 0), 2);
+            if (frame_count % 30 == 0) {  // Update every 30 frames
+                auto current_time = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time);
+                float fps = 30000.0f / duration.count();
+                
+                std::string fps_text = "FPS: " + std::to_string((int)fps);
+                cv::putText(frame, fps_text, cv::Point(10, 70), 
+                           cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255, 255, 0), 2);
+                
+                start_time = current_time;
             }
         }
 
-        // Display voice command status
-        if (voice_commands_enabled) {
-            putText(frame, "Voice Commands: ON", Point(10, frame.rows - 10), 
-                   FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 255, 0), 1);
+        // Display status
+        std::string status = face_detection_enabled ? "Detection: ON" : "Detection: OFF";
+        cv::putText(frame, status, cv::Point(frame.cols - 200, 30), 
+                   cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255, 255, 255), 2);
+
+        // Show the frame
+        cv::imshow("Simple Face Detection", frame);
+
+        // Handle keyboard input
+        char key = cv::waitKey(1);
+        if (key == 27 || key == 'q' || key == 'Q') {  // ESC or Q
+            std::cout << "🚪 Exiting application..." << std::endl;
+            break;
+        } else if (key == 'd' || key == 'D') {
+            face_detection_enabled = !face_detection_enabled;
+            std::cout << "Face detection " << (face_detection_enabled ? "enabled" : "disabled") << std::endl;
+        } else if (key == 'f' || key == 'F') {
+            show_fps = !show_fps;
+            std::cout << "FPS display " << (show_fps ? "enabled" : "disabled") << std::endl;
+        } else if (key == 's' || key == 'S') {
+            std::string filename = "screenshot_" + std::to_string(std::time(nullptr)) + ".jpg";
+            cv::imwrite(filename, frame);
+            std::cout << "📸 Screenshot saved as " << filename << std::endl;
         }
-
-        imshow("Face Detection with Voice Commands", frame);
-        
-        int key = waitKey(30) & 0xFF;
-        if (key == 27) break; // ESC to quit
-        
-        // Keyboard shortcuts
-        if (key == 'd' || key == 'D') toggleFaceDetection();
-        if (key == 'f' || key == 'F') toggleFPS();
-        if (key == 's' || key == 'S') takeScreenshot();
     }
 
-    if (voice_commands_enabled) {
-        voice_processor.stopListening();
-    }
-
+    cv::destroyAllWindows();
+    std::cout << "✅ Application closed successfully" << std::endl;
     return 0;
 }
-
